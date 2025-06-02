@@ -1,0 +1,22 @@
+(include_subdirs unqualified)
+
+(library
+ (name vulkaml)
+ (public_name vulkaml)
+ (preprocess
+  (pps ppx_cstruct))
+ (libraries core echo)
+ (foreign_stubs
+  (language c)
+  (names glfw_stubs vulkan_stubs utils)
+  (flags
+   (:include vulkaml_flags.sexp)))
+ (c_library_flags
+  (:include vulkaml_library_flags.sexp)))
+
+(rule
+ (targets vulkaml_flags.sexp vulkaml_library_flags.sexp)
+ (deps
+  (:discover %{project_root}/config/discover.exe))
+ (action
+  (run %{discover})))

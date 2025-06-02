@@ -1,0 +1,16 @@
+opam-version: "2.0"
+maintainer: "Zachary Deak deakodev@outlook.com"
+dev-repo: "git+https://github.com/deakodev/vulkan.git"
+bug-reports: "https://github.com/deakodev/vulkan/issues"
+license: "MIT"
+build: [
+  ["dune" "build" "-p" name "-j" jobs]
+]
+depends: [
+  "ocaml" {>= "5.1.0"}
+  "dune" {>= "3.17.0"}
+  "core"
+  "ppx_cstruct"
+]
+available: arch != "arm32" & arch != "x86_32"
+synopsis: "OCaml bindings for the Vulkan SDK"
