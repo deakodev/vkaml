@@ -1,9 +1,5 @@
-#include "utils.h"
-
-#include <echo.h>
-#include <caml/alloc.h>
-#include <caml/memory.h>
-#include <caml/mlvalues.h>
+#ifndef GLFW_STUBS_H
+#define GLFW_STUBS_H
 
 #include <GLFW/glfw3.h>
 
@@ -44,3 +40,5 @@ CAMLprim value ml_window_should_close(value window)
     int should_close = glfwWindowShouldClose(GLFWwindow_val(window));
     return Val_bool(should_close);
 }
+
+#endif // GLFW_STUBS_H
