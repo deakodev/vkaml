@@ -5,20 +5,55 @@
 
 CAML_WRAP_HANDLE_OPT(GLFWwindow, GLFWwindow*)
 
-CAMLprim value ml_window_create(value width, value height, value title)
+typedef struct vkaml_window_desc {
+    const char* title;
+    int width;
+    int height;
+} vkaml_window_desc;
+
+CAMLprim value ml_window_create(value ml_desc, value unit)
 {
-    CAMLparam3(width, height, title);
+    CAMLparam2(ml_desc, unit);
+
+    echo_info("Creating GLFW window");
+
+    vkaml_window_desc desc = { "Vkaml Window", 800, 600 };
+    if (Is_some(ml_desc))
+    {
+        value v_desc = Some_val(ml_desc);
+
+        value v_title_opt  = Field(v_desc, 0);
+        value v_width_opt  = Field(v_desc, 1);
+        value v_height_opt = Field(v_desc, 2);
+
+        if (Is_some(v_title_opt))
+        {
+            desc.title = String_val(Some_val(v_title_opt));
+        }
+
+        if (Is_some(v_width_opt))
+        {
+            desc.width = Int_val(Some_val(v_width_opt));
+        }
+
+        if (Is_some(v_height_opt))
+        {
+            desc.height = Int_val(Some_val(v_height_opt));
+        }
+    }
+
+    echo_info("Creating GLFW window: %s (%d x %d)", desc.title, desc.width, desc.height);
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-    GLFWwindow* glfw_window = glfwCreateWindow(Int_val(width), Int_val(height), String_val(title), NULL, NULL);
-    if (!glfw_window)
+    GLFWwindow* window = glfwCreateWindow(desc.width, desc.height, desc.title, NULL, NULL);
+    if (!window)
     {
         CAMLreturn(Val_none);
     }
 
-    CAMLreturn(Val_GLFWwindow(glfw_window));
+    CAMLreturn(Val_GLFWwindow(window));
 }
 
 
