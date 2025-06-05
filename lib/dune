@@ -3,12 +3,14 @@
 (library
  (name vkaml)
  (public_name vkaml)
+ (modules vkaml desc)
  (preprocess
   (pps ppx_cstruct))
  (libraries core echo)
  (foreign_stubs
   (language c)
-  (names stubs)
+  (names
+   (:standard \ *.c))
   (flags
    (:include vkaml_flags.sexp)))
  (c_library_flags

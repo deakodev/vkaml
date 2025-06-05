@@ -1,15 +1,8 @@
-#ifndef ARENA_H
-#define ARENA_H
+#include "vkaml_arena.h"
 
 #include <stddef.h>
 #include <stdint.h>
 #include <malloc.h>
-
-typedef struct vkaml_arena {
-    uintptr_t nextAllocation;
-    size_t capacity;
-    char* memory;
-} vkaml_arena;
 
 vkaml_arena* vkaml_arena_create(size_t capacity)
 {
@@ -37,5 +30,3 @@ void vkaml_arena_destroy(vkaml_arena* arena)
         free(arena);
     }
 }
-
-#endif // ARENA_H
