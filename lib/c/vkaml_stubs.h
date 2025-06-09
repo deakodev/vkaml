@@ -10,4 +10,7 @@ CAMLprim value ml_window_destroy(value window);
 CAMLprim value ml_window_poll_events(value unit);
 CAMLprim value ml_window_should_close(value window);
 
+CAMLprim value ml_available_validation_layers(value unit);
+CAMLprim value ml_available_instance_extensions(value unit);
+
 #endif // VKAML_STUBS_H

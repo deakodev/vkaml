@@ -43,12 +43,14 @@ CAMLprim value ml_init(value ml_desc)
     CAMLparam1(ml_desc);
     CAMLlocal1(ml_list_head);
 
-    value ml_window_title        = Field(ml_desc, 0);
-    value ml_window_size         = Field(ml_desc, 1);
-    value ml_app_name            = Field(ml_desc, 2);
-    value ml_api_version         = Field(ml_desc, 3);
-    value ml_validation_layers   = Field(ml_desc, 4);
-    value ml_instance_extensions = Field(ml_desc, 5);
+    value ml_window_title         = Field(ml_desc, 0);
+    value ml_window_size          = Field(ml_desc, 1);
+    value ml_app_name             = Field(ml_desc, 2);
+    value ml_api_version          = Field(ml_desc, 3);
+    value ml_enable_validation    = Field(ml_desc, 4);
+    value ml_validation_layers    = Field(ml_desc, 5);
+    value ml_instance_extensions  = Field(ml_desc, 6);
+    value ml_enable_instance_flag = Field(ml_desc, 7);
 
     value ml_window_width  = Field(ml_window_size, 0);
     value ml_window_height = Field(ml_window_size, 1);
@@ -57,19 +59,32 @@ CAMLprim value ml_init(value ml_desc)
     value ml_api_minor = Field(ml_api_version, 1);
     value ml_api_patch = Field(ml_api_version, 2);
 
+    value ml_validation_layers_count = Field(ml_validation_layers, 0);
+    value ml_validation_layer_names  = Field(ml_validation_layers, 1);
+
     value ml_instance_extension_count = Field(ml_instance_extensions, 0);
     value ml_instance_extension_names = Field(ml_instance_extensions, 1);
 
-    Vkaml_backend_desc desc       = { 0 };
-    desc.window_title             = caml_stat_strdup(String_val(ml_window_title));
-    desc.window_width             = Int_val(ml_window_width);
-    desc.window_height            = Int_val(ml_window_height);
-    desc.app_name                 = caml_stat_strdup(String_val(ml_app_name));
-    desc.enable_validation_layers = Bool_val(ml_validation_layers);
-    desc.api_version = VKAML_MAKE_VERSION(Int_val(ml_api_major), Int_val(ml_api_minor), Int_val(ml_api_patch));
-
+    Vkaml_backend_desc desc = { 0 };
+    desc.window_title       = caml_stat_strdup(String_val(ml_window_title));
+    desc.window_width       = Int_val(ml_window_width);
+    desc.window_height      = Int_val(ml_window_height);
+    desc.app_name           = caml_stat_strdup(String_val(ml_app_name));
+    desc.api_version        = VKAML_MAKE_VERSION(Int_val(ml_api_major), Int_val(ml_api_minor), Int_val(ml_api_patch));
+    desc.enable_validation  = Bool_val(ml_enable_validation);
+    desc.validation_layer_count   = Int_val(ml_validation_layers_count);
+    desc.validation_layer_names   = caml_stat_alloc(ml_validation_layers_count * sizeof(const char*));
     desc.instance_extension_count = Int_val(ml_instance_extension_count);
     desc.instance_extension_names = caml_stat_alloc(ml_instance_extension_count * sizeof(const char*));
+    desc.enable_instance_flag     = Bool_val(ml_enable_instance_flag);
+
+    for (uint32_t i = 0; i < desc.validation_layer_count; ++i)
+    {
+        ml_list_head                   = Field(ml_validation_layer_names, 0);
+        desc.validation_layer_names[i] = caml_stat_strdup(String_val(ml_list_head));
+        ml_validation_layer_names      = Field(ml_validation_layer_names, 1);
+    }
+
     for (uint32_t i = 0; i < desc.instance_extension_count; ++i)
     {
         ml_list_head                     = Field(ml_instance_extension_names, 0);
@@ -83,16 +98,31 @@ CAMLprim value ml_init(value ml_desc)
         echo_error("vkaml_init failed");
         caml_stat_free((void*)desc.window_title);
         caml_stat_free((void*)desc.app_name);
+
+        for (uint32_t i = 0; i < desc.validation_layer_count; ++i)
+        {
+            caml_stat_free((void*)desc.validation_layer_names[i]);
+        }
+        caml_stat_free((void*)desc.validation_layer_names);
+
         for (uint32_t i = 0; i < desc.instance_extension_count; ++i)
         {
             caml_stat_free((void*)desc.instance_extension_names[i]);
         }
         caml_stat_free((void*)desc.instance_extension_names);
+
         CAMLreturn(Val_none);
     }
 
     caml_stat_free((void*)desc.window_title);
     caml_stat_free((void*)desc.app_name);
+
+    for (uint32_t i = 0; i < desc.validation_layer_count; ++i)
+    {
+        caml_stat_free((void*)desc.validation_layer_names[i]);
+    }
+    caml_stat_free((void*)desc.validation_layer_names);
+
     for (uint32_t i = 0; i < desc.instance_extension_count; ++i)
     {
         caml_stat_free((void*)desc.instance_extension_names[i]);
@@ -166,13 +196,40 @@ CAMLprim value ml_window_should_close(value ml_window)
     CAMLreturn(Val_bool(should_close));
 }
 
-CAMLprim value ml_available_extension_names(value ml_unit)
+CAMLprim value ml_available_validation_layers(value ml_unit)
+{
+    CAMLparam1(ml_unit);
+    CAMLlocal3(ml_layer_names, ml_cons, ml_name);
+
+    const char* layer_names[VKAML_MAX_VALIDATION_LAYERS];
+    uint32_t layer_count = vulkan_available_validation_layers(layer_names);
+    if (layer_count == 0 || layer_names == NULL)
+    {
+        echo_error("No Vulkan validation layers found with ml_vkaml_supported_extension_names.");
+        CAMLreturn(Val_emptylist);
+    }
+
+    ml_layer_names = Val_emptylist;
+    for (int i = layer_count - 1; i >= 0; --i)
+    {
+        ml_name = caml_copy_string(layer_names[i]);
+        ml_cons = caml_alloc(2, 0);
+        Store_field(ml_cons, 0, ml_name);
+        Store_field(ml_cons, 1, ml_layer_names);
+        ml_layer_names = ml_cons;
+    }
+
+    CAMLreturn(ml_layer_names);
+}
+
+
+CAMLprim value ml_available_instance_extensions(value ml_unit)
 {
     CAMLparam1(ml_unit);
     CAMLlocal3(ml_extension_names, ml_cons, ml_name);
 
     const char* extension_names[VKAML_MAX_INSTANCE_EXTENSIONS];
-    uint32_t extension_count = vulkan_available_instance_extension_names(extension_names);
+    uint32_t extension_count = vulkan_available_instance_extensions(extension_names);
     if (extension_count == 0 || extension_names == NULL)
     {
         echo_error("No Vulkan instance extensions found with ml_vkaml_supported_extension_names.");

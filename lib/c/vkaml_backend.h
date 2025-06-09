@@ -25,7 +25,8 @@
 #define VKAML_MAKE_VERSION(...) \
     VKAML_MAKE_VERSION_SELECT(__VA_ARGS__, VKAML_MAKE_VERSION_3ARG, _, VKAML_MAKE_VERSION_1ARG)(__VA_ARGS__)
 
-
+// Maximum number of Vulkan validation layers
+#define VKAML_MAX_VALIDATION_LAYERS 16
 // Maximum number of Vulkan instance extensions
 #define VKAML_MAX_INSTANCE_EXTENSIONS 64
 
@@ -57,6 +58,7 @@ void* vkaml_array_alloc(Vkaml_arena* arena, uint32_t capacity, size_t element_si
                                         \
     VKAML_ARRAY_DEFINE_FUNCTIONS(type, array)
 
+VKAML_ARRAY_DEFINE(VkLayerProperties, Vkaml_layers_array)
 VKAML_ARRAY_DEFINE(VkExtensionProperties, Vkaml_extensions_array)
 
 typedef struct Vkaml_backend_desc {
@@ -67,18 +69,14 @@ typedef struct Vkaml_backend_desc {
 
     const char* app_name;
     uint32_t api_version;
-    bool enable_validation_layers;
+    bool enable_validation;
+    uint32_t validation_layer_count;
+    const char** validation_layer_names;
     uint32_t instance_extension_count;
     const char** instance_extension_names;
+    bool enable_instance_flag;
 
 } Vkaml_backend_desc;
-
-typedef enum Vkaml_api_version {
-    VKAML_API_VERSION_1_0 = 0,
-    VKAML_API_VERSION_1_1,
-    VKAML_API_VERSION_1_2,
-    VKAML_API_VERSION_1_3,
-} Vkaml_api_version;
 
 typedef struct Vkaml_window {
     GLFWwindow* window;
@@ -93,8 +91,9 @@ typedef struct Vkaml_backend {
     Vkaml_window window;
     Vkaml_instance instance;
 
-    // Persistent
     uintptr_t arena_offset; // Offset in the internal arena for persistent allocations
+
+    Vkaml_layers_array validation_layers;
     Vkaml_extensions_array instance_extensions;
 } Vkaml_backend;
 

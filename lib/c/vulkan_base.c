@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
@@ -14,7 +15,6 @@
 VkInstance vkaml_instance_init(Vkaml_backend_desc* desc)
 {
     VkApplicationInfo app_info  = { .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO };
-    app_info.pNext              = NULL;
     app_info.pApplicationName   = desc->app_name;
     app_info.applicationVersion = VKAML_MAKE_VERSION(1, 0, 0);
     app_info.pEngineName        = "Vkaml Renderer";
@@ -22,20 +22,27 @@ VkInstance vkaml_instance_init(Vkaml_backend_desc* desc)
     app_info.apiVersion         = desc->api_version;
 
     VkInstanceCreateInfo create_info = { .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
-    create_info.pNext                = NULL;
-    create_info.flags                = 0;
-    create_info.pApplicationInfo     = &app_info;
-    create_info.enabledLayerCount    = 0;
-    create_info.ppEnabledLayerNames  = NULL;
-
-    echo_trace("instance extension count: %d", desc->instance_extension_count);
-    for (uint32_t i = 0; i < desc->instance_extension_count; ++i)
-    {
-        echo_trace("instance extension %d: %s", i, desc->instance_extension_names[i]);
-    }
-
+    create_info.flags |= desc->enable_instance_flag ? VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR : 0;
+    create_info.pApplicationInfo        = &app_info;
+    create_info.enabledLayerCount       = desc->enable_validation ? desc->validation_layer_count : 0;
+    create_info.ppEnabledLayerNames     = desc->enable_validation ? desc->validation_layer_names : NULL;
     create_info.enabledExtensionCount   = desc->instance_extension_count;
     create_info.ppEnabledExtensionNames = desc->instance_extension_names;
+
+    if (desc->enable_validation)
+    {
+        echo_trace("Enabled validation layers:");
+        for (uint32_t i = 0; i < desc->validation_layer_count; ++i)
+        {
+            printf("\t\t\t%s\n", desc->validation_layer_names[i]);
+        }
+    }
+
+    echo_trace("Enabled instance extensions:");
+    for (uint32_t i = 0; i < desc->instance_extension_count; ++i)
+    {
+        printf("\t\t\t%s\n", desc->instance_extension_names[i]);
+    }
 
     VkInstance instance;
     VK_CHECK(vkCreateInstance(&create_info, NULL, &instance));

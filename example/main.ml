@@ -6,15 +6,17 @@ let backend_setup () =
     |> with_ (Window_size (1200, 800))
     |> with_ (App_name "Vkaml Example")
     |> with_ (Api_version (1, 0, 0))
-    |> with_ (Validation_layers true)
+    |> with_ (Enable_validation true)
+    |> with_ (Validation_layers [])
     |> with_ (Instance_extensions [])
+    |> with_ (Enable_instance_flag false)
   in
   Vkaml.init ~desc
 ;;
 
 let () =
   Echo.set_out (File "debug.log");
-  List.iter print_endline (Vkaml.Stubs.available_on_platform ());
+  (* List.iter print_endline (Vkaml.Stubs.query_available_instance_extensions ()); *)
   let backend_handle = backend_setup () in
   let window_handle = Vkaml.window_handle backend_handle in
   while not (Vkaml.window_should_close window_handle) do
