@@ -1,46 +1,44 @@
 #include "vulkan_base.h"
 
-#include "vkaml_types.h"
 #include "vkaml_backend.h"
 
 #include <echo.h>
 
+#include <assert.h>
+#include <stdbool.h>
+#include <string.h>
+
 #include <vulkan/vulkan.h>
+#include <GLFW/glfw3.h>
 
-static uint32_t vkaml_api(vkaml_api_version api_version)
+VkInstance vkaml_instance_init(Vkaml_backend_desc* desc)
 {
-    switch (api_version)
+    VkApplicationInfo app_info  = { .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO };
+    app_info.pNext              = NULL;
+    app_info.pApplicationName   = desc->app_name;
+    app_info.applicationVersion = VKAML_MAKE_VERSION(1, 0, 0);
+    app_info.pEngineName        = "Vkaml Renderer";
+    app_info.engineVersion      = VKAML_MAKE_VERSION(1, 0, 0);
+    app_info.apiVersion         = desc->api_version;
+
+    VkInstanceCreateInfo create_info = { .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
+    create_info.pNext                = NULL;
+    create_info.flags                = 0;
+    create_info.pApplicationInfo     = &app_info;
+    create_info.enabledLayerCount    = 0;
+    create_info.ppEnabledLayerNames  = NULL;
+
+    echo_trace("instance extension count: %d", desc->instance_extension_count);
+    for (uint32_t i = 0; i < desc->instance_extension_count; ++i)
     {
-    case VKAML_API_VERSION_1_0: return VK_API_VERSION_1_0;
-    case VKAML_API_VERSION_1_1: return VK_API_VERSION_1_1;
-    case VKAML_API_VERSION_1_2: return VK_API_VERSION_1_2;
-    case VKAML_API_VERSION_1_3: return VK_API_VERSION_1_3;
-    default: echo_error("Invalid Vulkan API version"); return VK_API_VERSION_1_0; // Fallback
+        echo_trace("instance extension %d: %s", i, desc->instance_extension_names[i]);
     }
-}
 
-VkInstance vk_instance_init(vkaml_desc* desc)
-{
-    VkApplicationInfo appInfo  = { .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO };
-    appInfo.pApplicationName   = desc->app_name;
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName        = "Vkaml Renderer";
-    appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion         = vkaml_api(desc->api_version);
-
-    VkInstanceCreateInfo createInfo = { .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
-    createInfo.pNext                = NULL;
-    createInfo.flags                = 0;
-    createInfo.pApplicationInfo     = &appInfo;
-    createInfo.enabledLayerCount    = 0;
-    createInfo.ppEnabledLayerNames  = NULL;
-
-
-    createInfo.enabledExtensionCount   = 0;
-    createInfo.ppEnabledExtensionNames = NULL;
+    create_info.enabledExtensionCount   = desc->instance_extension_count;
+    create_info.ppEnabledExtensionNames = desc->instance_extension_names;
 
     VkInstance instance;
-    VK_CHECK(vkCreateInstance(&createInfo, NULL, &instance));
+    VK_CHECK(vkCreateInstance(&create_info, NULL, &instance));
 
     return instance;
 }

@@ -1,1 +1,0 @@
-#include "vkaml_platform.h"

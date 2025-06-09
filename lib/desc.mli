@@ -1,21 +1,29 @@
-module Window_desc : sig
-  type t
+type window_size =
+  { width : int
+  ; height : int
+  }
 
-  val default : t
-  val with_title : string -> t -> t
-  val with_size : int -> int -> t -> t
-end
+type instance_extensions =
+  { count : int
+  ; names : string list
+  }
 
-module App_desc : sig
-  type api_version =
-    | VK_API_VERSION_1_0
-    | VK_API_VERSION_1_1
-    | VK_API_VERSION_1_2
-    | VK_API_VERSION_1_3
+type t =
+  { window_title : string
+  ; window_size : window_size
+  ; app_name : string
+  ; api_version : int * int * int
+  ; validation_layers : bool
+  ; instance_extensions : instance_extensions
+  }
 
-  type t
+type key =
+  | Window_title of string
+  | Window_size of int * int
+  | App_name of string
+  | Api_version of int * int * int
+  | Validation_layers of bool
+  | Instance_extensions of string list
 
-  val default : t
-  val with_name : string -> t -> t
-  val with_api : api_version -> t -> t
-end
+val default : t
+val with_ : key -> t -> t

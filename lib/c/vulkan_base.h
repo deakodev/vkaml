@@ -1,7 +1,7 @@
 #ifndef VULKAN_BASE_H
 #define VULKAN_BASE_H
 
-#include "vkaml_types.h"
+#include "vkaml_backend.h"
 
 #include <assert.h>
 
@@ -21,6 +21,6 @@ const char* vk_error_string(VkResult error);
         }                                                                                                  \
     } while (0)
 
-VkInstance vkaml_instance_init(vkaml_desc* desc);
+VkInstance vkaml_instance_init(Vkaml_backend_desc* desc);
 
 #endif // VULKAN_BASE_H

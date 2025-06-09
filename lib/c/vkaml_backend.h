@@ -1,8 +1,106 @@
 #ifndef VKAML_BACKEND_H
 #define VKAML_BACKEND_H
 
-#include "vkaml_types.h"
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
-vkaml_backend* vkaml_init(vkaml_desc* desc);
+#include <vulkan/vulkan.h>
+#include <GLFW/glfw3.h>
+
+
+// Platform detection
+#if defined(__linux__)
+#define VKAML_LINUX
+#else
+#error "Unsupported platform!"
+#endif
+
+
+// Versioning macros
+#define VKAML_MAKE_VERSION_SELECT(_1, _2, _3, MAKE_VERSION_XARG, ...) MAKE_VERSION_XARG
+#define VKAML_MAKE_VERSION_1ARG(n) VK_MAKE_VERSION(1, n, 0)
+#define VKAML_MAKE_VERSION_3ARG(m, n, p) VK_MAKE_VERSION(m, n, p)
+
+#define VKAML_MAKE_VERSION(...) \
+    VKAML_MAKE_VERSION_SELECT(__VA_ARGS__, VKAML_MAKE_VERSION_3ARG, _, VKAML_MAKE_VERSION_1ARG)(__VA_ARGS__)
+
+
+// Maximum number of Vulkan instance extensions
+#define VKAML_MAX_INSTANCE_EXTENSIONS 64
+
+typedef struct Vkaml_arena {
+    uintptr_t next_allocation;
+    size_t capacity;
+    char* memory;
+} Vkaml_arena;
+
+Vkaml_arena* vkaml_arena_create(size_t capacity);
+void vkaml_arena_destroy(Vkaml_arena* arena);
+
+void* vkaml_array_alloc(Vkaml_arena* arena, uint32_t capacity, size_t element_size);
+
+// Array definition macros
+#define VKAML_ARRAY_DEFINE_FUNCTIONS(type, array)                                                                             \
+                                                                                                                              \
+    static array array##_alloc(Vkaml_arena* arena, uint32_t capacity)                                                         \
+    {                                                                                                                         \
+        return (array){ .capacity = capacity, .length = 0, .data = (type*)vkaml_array_alloc(arena, capacity, sizeof(type)) }; \
+    }
+
+#define VKAML_ARRAY_DEFINE(type, array) \
+    typedef struct {                    \
+        uint32_t length;                \
+        uint32_t capacity;              \
+        type* data;                     \
+    } array;                            \
+                                        \
+    VKAML_ARRAY_DEFINE_FUNCTIONS(type, array)
+
+VKAML_ARRAY_DEFINE(VkExtensionProperties, Vkaml_extensions_array)
+
+typedef struct Vkaml_backend_desc {
+
+    const char* window_title;
+    int window_width;
+    int window_height;
+
+    const char* app_name;
+    uint32_t api_version;
+    bool enable_validation_layers;
+    uint32_t instance_extension_count;
+    const char** instance_extension_names;
+
+} Vkaml_backend_desc;
+
+typedef enum Vkaml_api_version {
+    VKAML_API_VERSION_1_0 = 0,
+    VKAML_API_VERSION_1_1,
+    VKAML_API_VERSION_1_2,
+    VKAML_API_VERSION_1_3,
+} Vkaml_api_version;
+
+typedef struct Vkaml_window {
+    GLFWwindow* window;
+} Vkaml_window;
+
+typedef struct Vkaml_instance {
+    VkInstance instance;
+} Vkaml_instance;
+
+typedef struct Vkaml_backend {
+    Vkaml_arena internal_arena;
+    Vkaml_window window;
+    Vkaml_instance instance;
+
+    // Persistent
+    uintptr_t arena_offset; // Offset in the internal arena for persistent allocations
+    Vkaml_extensions_array instance_extensions;
+} Vkaml_backend;
+
+Vkaml_backend* vkaml_init(Vkaml_backend_desc* desc);
+
+Vkaml_backend* vkaml_backend_alloc(Vkaml_arena* arena);
+void vkaml_backend_persistent_alloc(Vkaml_backend* vkaml, Vkaml_arena* arena);
 
 #endif // VKAML_BACKEND_H

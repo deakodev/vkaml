@@ -1,30 +1,49 @@
-[@@@ocaml.warning "-69-37"]
+type window_size =
+  { width : int
+  ; height : int
+  }
 
-module Window_desc = struct
-  type t =
-    { title : string
-    ; width : int
-    ; height : int
+type instance_extensions =
+  { count : int
+  ; names : string list
+  }
+
+type t =
+  { window_title : string
+  ; window_size : window_size
+  ; app_name : string
+  ; api_version : int * int * int
+  ; validation_layers : bool
+  ; instance_extensions : instance_extensions
+  }
+
+let default =
+  { window_title = "Vkaml Window"
+  ; window_size = { width = 1200; height = 800 }
+  ; app_name = "Vkaml App"
+  ; api_version = 1, 0, 0
+  ; validation_layers = false
+  ; instance_extensions = { count = 0; names = [] }
+  }
+;;
+
+type key =
+  | Window_title of string
+  | Window_size of int * int
+  | App_name of string
+  | Api_version of int * int * int
+  | Validation_layers of bool
+  | Instance_extensions of string list
+
+let with_ key desc =
+  match key with
+  | Window_title title -> { desc with window_title = title }
+  | Window_size (width, height) -> { desc with window_size = { width; height } }
+  | App_name name -> { desc with app_name = name }
+  | Api_version (major, minor, patch) -> { desc with api_version = major, minor, patch }
+  | Validation_layers is_enabled -> { desc with validation_layers = is_enabled }
+  | Instance_extensions extensions ->
+    { desc with
+      instance_extensions = { count = List.length extensions; names = extensions }
     }
-
-  let default = { title = "Vkaml Window"; width = 1200; height = 800 }
-  let with_title title desc = { desc with title }
-  let with_size width height desc = { desc with width; height }
-end
-
-module App_desc = struct
-  type api_version =
-    | VK_API_VERSION_1_0
-    | VK_API_VERSION_1_1
-    | VK_API_VERSION_1_2
-    | VK_API_VERSION_1_3
-
-  type t =
-    { name : string
-    ; api_version : api_version
-    }
-
-  let default = { name = "Vkaml App"; api_version = VK_API_VERSION_1_0 }
-  let with_name name desc = { desc with name }
-  let with_api api_version desc = { desc with api_version }
-end
+;;
