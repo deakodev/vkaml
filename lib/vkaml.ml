@@ -56,7 +56,7 @@ let init ~desc =
   Stubs.init ~desc:backend_desc
 ;;
 
+let cleanup backend_handle = Stubs.cleanup backend_handle
 let window_handle backend_handle = Stubs.window_handle backend_handle
-let window_destroy backend_handle = Stubs.window_destroy backend_handle
 let window_poll_events () = Stubs.window_poll_events ()
 let window_should_close backend_handle = Stubs.window_should_close backend_handle

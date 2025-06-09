@@ -84,6 +84,7 @@ typedef struct Vkaml_window {
 
 typedef struct Vkaml_instance {
     VkInstance instance;
+    VkDebugUtilsMessengerEXT debugger;
 } Vkaml_instance;
 
 typedef struct Vkaml_backend {
@@ -98,6 +99,7 @@ typedef struct Vkaml_backend {
 } Vkaml_backend;
 
 Vkaml_backend* vkaml_init(Vkaml_backend_desc* desc);
+void vkaml_cleanup(Vkaml_backend* vkaml);
 
 Vkaml_backend* vkaml_backend_alloc(Vkaml_arena* arena);
 void vkaml_backend_persistent_alloc(Vkaml_backend* vkaml, Vkaml_arena* arena);

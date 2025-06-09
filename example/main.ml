@@ -8,7 +8,7 @@ let backend_setup () =
     |> with_ (Api_version (1, 0, 0))
     |> with_ (Enable_validation true)
     |> with_ (Validation_layers [])
-    |> with_ (Instance_extensions [])
+    |> with_ (Instance_extensions [ "VK_EXT_debug_utils" ])
     |> with_ (Enable_instance_flag false)
   in
   Vkaml.init ~desc
@@ -23,5 +23,6 @@ let () =
     Vkaml.window_poll_events ();
     Unix.sleepf 0.1;
     Echo.info "polling..."
-  done
+  done;
+  Vkaml.cleanup backend_handle
 ;;

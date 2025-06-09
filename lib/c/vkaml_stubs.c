@@ -134,6 +134,33 @@ CAMLprim value ml_init(value ml_desc)
     CAMLreturn(Val_Vkaml_backend(vkaml));
 }
 
+CAMLprim value ml_cleanup(value ml_backend_handle)
+{
+    CAMLparam1(ml_backend_handle);
+
+    VKAML_REQUIRE_INIT();
+
+    Vkaml_backend* backend = Vkaml_backend_val(ml_backend_handle);
+    if (backend == NULL)
+    {
+        echo_error("Null backend pointer passed to ml_vkaml_cleanup");
+        CAMLreturn(Val_unit);
+    }
+
+    GLFWwindow* window = backend->window.window;
+    if (window)
+    {
+        glfwDestroyWindow(window);
+        glfwTerminate();
+    }
+
+    vkaml_cleanup(backend);
+
+    _vkaml_initialized = false;
+
+    CAMLreturn(Val_unit);
+}
+
 CAMLprim value ml_window_handle(value ml_backend_handle)
 {
     CAMLparam1(ml_backend_handle);
@@ -148,25 +175,6 @@ CAMLprim value ml_window_handle(value ml_backend_handle)
     }
 
     CAMLreturn(Val_Vkaml_window(&backend->window));
-}
-
-CAMLprim value ml_window_destroy(value ml_window)
-{
-    CAMLparam1(ml_window);
-
-    VKAML_REQUIRE_INIT();
-
-    GLFWwindow* window = GLFWwindow_val(ml_window);
-    if (window == NULL)
-    {
-        echo_error("Null GLFWwindow pointer passed to ml_window_destroy");
-        CAMLreturn(Val_unit);
-    }
-
-    glfwDestroyWindow(window);
-    glfwTerminate();
-
-    CAMLreturn(Val_unit);
 }
 
 CAMLprim value ml_window_poll_events(value unit)

@@ -21,6 +21,7 @@ const char* vk_error_string(VkResult error);
         }                                                                                                  \
     } while (0)
 
-VkInstance vkaml_instance_init(Vkaml_backend_desc* desc);
+VkInstance vulkan_instance_init(Vkaml_backend_desc* desc);
+VkDebugUtilsMessengerEXT vulkan_debugger_init(VkInstance instance);
 
 #endif // VULKAN_BASE_H

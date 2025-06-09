@@ -80,14 +80,28 @@ Vkaml_backend* vkaml_init(Vkaml_backend_desc* desc)
     vkaml_backend_persistent_alloc(vkaml, arena);
     // vkaml_emphemeral_alloc(vkaml, arena);
 
+    VkInstance instance               = vulkan_instance_init(desc);
+    VkDebugUtilsMessengerEXT debugger = desc->enable_validation ? vulkan_debugger_init(instance) : VK_NULL_HANDLE;
+
     *vkaml = (Vkaml_backend){
         .internal_arena = *arena,
         .window         = (Vkaml_window){ .window = vkaml_window_create(desc) },
-        .instance       = (Vkaml_instance){ .instance = vkaml_instance_init(desc) },
+        .instance       = (Vkaml_instance){ .instance = instance, .debugger = debugger },
     };
 
-
     return vkaml;
+}
+
+void vkaml_cleanup(Vkaml_backend* vkaml)
+{
+    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT =
+    (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vkaml->instance.instance, "vkDestroyDebugUtilsMessengerEXT");
+
+    if (vkDestroyDebugUtilsMessengerEXT)
+    {
+        vkDestroyDebugUtilsMessengerEXT(vkaml->instance.instance, vkaml->instance.debugger, NULL);
+    }
+    vkDestroyInstance(vkaml->instance.instance, NULL);
 }
 
 Vkaml_backend* vkaml_backend_alloc(Vkaml_arena* arena)

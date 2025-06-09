@@ -2,7 +2,7 @@ type window_handle = nativeint option
 type vkaml_handle = nativeint
 
 val init : desc:Desc.t -> vkaml_handle
-val window_destroy : window_handle -> unit
+val cleanup : vkaml_handle -> unit
 val window_poll_events : unit -> unit
 val window_should_close : window_handle -> bool
 val query_available_validation_layers : unit -> string list
