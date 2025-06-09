@@ -23,5 +23,6 @@ const char* vk_error_string(VkResult error);
 
 VkInstance vulkan_instance_init(Vkaml_backend_desc* desc);
 VkDebugUtilsMessengerEXT vulkan_debugger_init(VkInstance instance);
+VkSurfaceKHR vulkan_surface_init(VkInstance instance, GLFWwindow* window);
 
 #endif // VULKAN_BASE_H

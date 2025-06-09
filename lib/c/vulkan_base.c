@@ -106,16 +106,20 @@ VkDebugUtilsMessengerEXT vulkan_debugger_init(VkInstance instance)
     if (vkCreateDebugUtilsMessengerEXT != NULL)
     {
         VkDebugUtilsMessengerEXT debug_messenger;
-        VkResult result = vkCreateDebugUtilsMessengerEXT(instance, &debug_create_info, NULL, &debug_messenger);
-        if (result != VK_SUCCESS)
-        {
-            echo_error("Failed to create debug messenger: %d", result);
-        }
+        VK_CHECK(vkCreateDebugUtilsMessengerEXT(instance, &debug_create_info, NULL, &debug_messenger));
 
         return debug_messenger;
     }
 
     return VK_NULL_HANDLE;
+}
+
+VkSurfaceKHR vulkan_surface_init(VkInstance instance, GLFWwindow* window)
+{
+    VkSurfaceKHR surface;
+    VK_CHECK(glfwCreateWindowSurface(instance, window, NULL, &surface));
+
+    return surface;
 }
 
 const char* vk_error_string(VkResult error)

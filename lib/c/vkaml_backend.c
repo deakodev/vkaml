@@ -77,16 +77,19 @@ Vkaml_backend* vkaml_init(Vkaml_backend_desc* desc)
         return NULL;
     }
 
-    vkaml_backend_persistent_alloc(vkaml, arena);
+    // vkaml_backend_persistent_alloc(vkaml, arena);
     // vkaml_emphemeral_alloc(vkaml, arena);
+
+    GLFWwindow* window = vkaml_window_create(desc);
 
     VkInstance instance               = vulkan_instance_init(desc);
     VkDebugUtilsMessengerEXT debugger = desc->enable_validation ? vulkan_debugger_init(instance) : VK_NULL_HANDLE;
+    VkSurfaceKHR surface              = vulkan_surface_init(instance, window);
 
     *vkaml = (Vkaml_backend){
         .internal_arena = *arena,
-        .window         = (Vkaml_window){ .window = vkaml_window_create(desc) },
-        .instance       = (Vkaml_instance){ .instance = instance, .debugger = debugger },
+        .window         = (Vkaml_window){ .window = window },
+        .base           = (Vkaml_base){ .instance = instance, .debugger = debugger, .surface = surface },
     };
 
     return vkaml;
@@ -94,14 +97,22 @@ Vkaml_backend* vkaml_init(Vkaml_backend_desc* desc)
 
 void vkaml_cleanup(Vkaml_backend* vkaml)
 {
-    PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT =
-    (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vkaml->instance.instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (vkaml->base.surface)
+        vkDestroySurfaceKHR(vkaml->base.instance, vkaml->base.surface, NULL);
 
-    if (vkDestroyDebugUtilsMessengerEXT)
+    if (vkaml->base.debugger)
     {
-        vkDestroyDebugUtilsMessengerEXT(vkaml->instance.instance, vkaml->instance.debugger, NULL);
+        PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT =
+        (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vkaml->base.instance, "vkDestroyDebugUtilsMessengerEXT");
+
+        if (vkDestroyDebugUtilsMessengerEXT)
+        {
+            vkDestroyDebugUtilsMessengerEXT(vkaml->base.instance, vkaml->base.debugger, NULL);
+        }
     }
-    vkDestroyInstance(vkaml->instance.instance, NULL);
+
+    if (vkaml->base.instance)
+        vkDestroyInstance(vkaml->base.instance, NULL);
 }
 
 Vkaml_backend* vkaml_backend_alloc(Vkaml_arena* arena)
@@ -118,8 +129,8 @@ Vkaml_backend* vkaml_backend_alloc(Vkaml_arena* arena)
     return (Vkaml_backend*)(memoryAddress + nextAllocOffset);
 }
 
-void vkaml_backend_persistent_alloc(Vkaml_backend* vkaml, Vkaml_arena* arena)
-{
-    vkaml->instance_extensions = Vkaml_extensions_array_alloc(arena, VKAML_MAX_INSTANCE_EXTENSIONS);
-    vkaml->arena_offset        = arena->next_allocation;
-}
+// void vkaml_backend_persistent_alloc(Vkaml_backend* vkaml, Vkaml_arena* arena)
+// {
+//     vkaml->instance_extensions = Vkaml_extensions_array_alloc(arena, VKAML_MAX_INSTANCE_EXTENSIONS);
+//     vkaml->arena_offset        = arena->next_allocation;
+// }

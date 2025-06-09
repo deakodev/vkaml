@@ -58,9 +58,6 @@ void* vkaml_array_alloc(Vkaml_arena* arena, uint32_t capacity, size_t element_si
                                         \
     VKAML_ARRAY_DEFINE_FUNCTIONS(type, array)
 
-VKAML_ARRAY_DEFINE(VkLayerProperties, Vkaml_layers_array)
-VKAML_ARRAY_DEFINE(VkExtensionProperties, Vkaml_extensions_array)
-
 typedef struct Vkaml_backend_desc {
 
     const char* window_title;
@@ -82,20 +79,16 @@ typedef struct Vkaml_window {
     GLFWwindow* window;
 } Vkaml_window;
 
-typedef struct Vkaml_instance {
+typedef struct Vkaml_base {
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugger;
-} Vkaml_instance;
+    VkSurfaceKHR surface;
+} Vkaml_base;
 
 typedef struct Vkaml_backend {
     Vkaml_arena internal_arena;
     Vkaml_window window;
-    Vkaml_instance instance;
-
-    uintptr_t arena_offset; // Offset in the internal arena for persistent allocations
-
-    Vkaml_layers_array validation_layers;
-    Vkaml_extensions_array instance_extensions;
+    Vkaml_base base;
 } Vkaml_backend;
 
 Vkaml_backend* vkaml_init(Vkaml_backend_desc* desc);
