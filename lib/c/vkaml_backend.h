@@ -29,6 +29,8 @@
 #define VKAML_MAX_VALIDATION_LAYERS 16
 // Maximum number of Vulkan instance extensions
 #define VKAML_MAX_INSTANCE_EXTENSIONS 64
+// Maximum number of Vulkan physical devices
+#define VKAML_MAX_PHYSICAL_DEVICES 8
 
 typedef struct Vkaml_arena {
     uintptr_t next_allocation;
@@ -81,20 +83,40 @@ typedef struct Vkaml_window {
 
 typedef struct Vkaml_base {
     VkInstance instance;
-    VkDebugUtilsMessengerEXT debugger;
+    VkDebugUtilsMessengerEXT debug_messenger;
     VkSurfaceKHR surface;
+    VkPhysicalDevice physical_device;
 } Vkaml_base;
+
+VKAML_ARRAY_DEFINE(VkSurfaceFormatKHR, Vkaml_surface_formats_array);
+VKAML_ARRAY_DEFINE(VkPresentModeKHR, Vkaml_present_modes_array);
+VKAML_ARRAY_DEFINE(VkQueueFamilyProperties, Vkaml_queue_families_array);
+
+typedef struct Vkaml_physical_device {
+    VkPhysicalDevice device;
+    VkPhysicalDeviceProperties properties;
+    VkPhysicalDeviceFeatures features;
+    VkSurfaceCapabilitiesKHR surface_capabilities;
+    Vkaml_surface_formats_array surface_formats;
+    Vkaml_present_modes_array present_modes;
+    Vkaml_queue_families_array queue_families;
+    int32_t graphics_family_index;
+    int32_t present_family_index;
+} Vkaml_physical_device;
+
+VKAML_ARRAY_DEFINE(Vkaml_physical_device, Vkaml_physical_device_array);
 
 typedef struct Vkaml_backend {
     Vkaml_arena internal_arena;
     Vkaml_window window;
     Vkaml_base base;
+
+    Vkaml_physical_device_array physical_devices;
 } Vkaml_backend;
 
 Vkaml_backend* vkaml_init(Vkaml_backend_desc* desc);
 void vkaml_cleanup(Vkaml_backend* vkaml);
 
 Vkaml_backend* vkaml_backend_alloc(Vkaml_arena* arena);
-void vkaml_backend_persistent_alloc(Vkaml_backend* vkaml, Vkaml_arena* arena);
 
 #endif // VKAML_BACKEND_H

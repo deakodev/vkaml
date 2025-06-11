@@ -21,8 +21,9 @@ const char* vk_error_string(VkResult error);
         }                                                                                                  \
     } while (0)
 
-VkInstance vulkan_instance_init(Vkaml_backend_desc* desc);
-VkDebugUtilsMessengerEXT vulkan_debugger_init(VkInstance instance);
-VkSurfaceKHR vulkan_surface_init(VkInstance instance, GLFWwindow* window);
+void vulkan_instance_setup(Vkaml_backend* vkaml, Vkaml_backend_desc* desc);
+void vulkan_debugger_setup(Vkaml_backend* vkaml);
+void vulkan_surface_setup(Vkaml_backend* vkaml);
+void vulkan_physical_device_setup(Vkaml_backend* vkaml);
 
 #endif // VULKAN_BASE_H

@@ -10,13 +10,17 @@
 
 #include <GLFW/glfw3.h>
 
-GLFWwindow* vkaml_window_create(Vkaml_backend_desc* desc)
+void vkaml_window_create(Vkaml_backend* vkaml, Vkaml_backend_desc* desc)
 {
+    assert(vkaml != NULL);
+
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
     echo_info("Creating GLFW window: %s (%d x %d)", desc->window_title, desc->window_width, desc->window_height);
-    return glfwCreateWindow(desc->window_width, desc->window_height, desc->window_title, NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(desc->window_width, desc->window_height, desc->window_title, NULL, NULL);
+
+    vkaml->window.window = window;
 }
 
 Vkaml_arena* vkaml_arena_create(size_t capacity)
@@ -60,6 +64,19 @@ void* vkaml_array_alloc(Vkaml_arena* arena, uint32_t capacity, size_t element_si
     return NULL;
 }
 
+Vkaml_backend* vkaml_backend_alloc(Vkaml_arena* arena)
+{
+    size_t totalSizeBytes   = sizeof(Vkaml_backend);
+    uintptr_t memoryAddress = (uintptr_t)arena->memory;
+
+    uintptr_t nextAllocOffset = (memoryAddress % 64); // cache aligned
+    if (nextAllocOffset + totalSizeBytes > arena->capacity)
+    {
+        return NULL;
+    }
+    arena->next_allocation = nextAllocOffset + totalSizeBytes;
+    return (Vkaml_backend*)(memoryAddress + nextAllocOffset);
+}
 
 Vkaml_backend* vkaml_init(Vkaml_backend_desc* desc)
 {
@@ -77,20 +94,18 @@ Vkaml_backend* vkaml_init(Vkaml_backend_desc* desc)
         return NULL;
     }
 
-    // vkaml_backend_persistent_alloc(vkaml, arena);
-    // vkaml_emphemeral_alloc(vkaml, arena);
+    vkaml->internal_arena = *arena;
 
-    GLFWwindow* window = vkaml_window_create(desc);
+    vkaml_window_create(vkaml, desc);
+    vulkan_instance_setup(vkaml, desc);
 
-    VkInstance instance               = vulkan_instance_init(desc);
-    VkDebugUtilsMessengerEXT debugger = desc->enable_validation ? vulkan_debugger_init(instance) : VK_NULL_HANDLE;
-    VkSurfaceKHR surface              = vulkan_surface_init(instance, window);
+    if (desc->enable_validation)
+    {
+        vulkan_debugger_setup(vkaml);
+    }
 
-    *vkaml = (Vkaml_backend){
-        .internal_arena = *arena,
-        .window         = (Vkaml_window){ .window = window },
-        .base           = (Vkaml_base){ .instance = instance, .debugger = debugger, .surface = surface },
-    };
+    vulkan_surface_setup(vkaml);
+    vulkan_physical_device_setup(vkaml);
 
     return vkaml;
 }
@@ -100,37 +115,17 @@ void vkaml_cleanup(Vkaml_backend* vkaml)
     if (vkaml->base.surface)
         vkDestroySurfaceKHR(vkaml->base.instance, vkaml->base.surface, NULL);
 
-    if (vkaml->base.debugger)
+    if (vkaml->base.debug_messenger)
     {
         PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT =
         (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(vkaml->base.instance, "vkDestroyDebugUtilsMessengerEXT");
 
         if (vkDestroyDebugUtilsMessengerEXT)
         {
-            vkDestroyDebugUtilsMessengerEXT(vkaml->base.instance, vkaml->base.debugger, NULL);
+            vkDestroyDebugUtilsMessengerEXT(vkaml->base.instance, vkaml->base.debug_messenger, NULL);
         }
     }
 
     if (vkaml->base.instance)
         vkDestroyInstance(vkaml->base.instance, NULL);
 }
-
-Vkaml_backend* vkaml_backend_alloc(Vkaml_arena* arena)
-{
-    size_t totalSizeBytes   = sizeof(Vkaml_backend);
-    uintptr_t memoryAddress = (uintptr_t)arena->memory;
-
-    uintptr_t nextAllocOffset = (memoryAddress % 64); // cache aligned
-    if (nextAllocOffset + totalSizeBytes > arena->capacity)
-    {
-        return NULL;
-    }
-    arena->next_allocation = nextAllocOffset + totalSizeBytes;
-    return (Vkaml_backend*)(memoryAddress + nextAllocOffset);
-}
-
-// void vkaml_backend_persistent_alloc(Vkaml_backend* vkaml, Vkaml_arena* arena)
-// {
-//     vkaml->instance_extensions = Vkaml_extensions_array_alloc(arena, VKAML_MAX_INSTANCE_EXTENSIONS);
-//     vkaml->arena_offset        = arena->next_allocation;
-// }
